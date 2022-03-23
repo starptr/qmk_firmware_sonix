@@ -50,3 +50,4 @@ SUBS(code_extends, "extends", KC_X, KC_D, KC_T, KC_N)
 SUBS(code_await, "await", KC_A, KC_W, KC_T, KC_I)
 SUBS(code_async, "async", KC_A, KC_S, KC_C, KC_Y)
 
+SUBS(nvim_texbuild, ":TexlabBuild\n", KC_T, KC_U, KC_I, KC_L)
