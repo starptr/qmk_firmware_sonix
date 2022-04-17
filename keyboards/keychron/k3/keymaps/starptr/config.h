@@ -1,2 +1,3 @@
 #define COMBO_VARIABLE_LEN
-#define COMBO_TERM 50
+#define COMBO_TERM 30
+#define COMBO_STRICT_TIMER
