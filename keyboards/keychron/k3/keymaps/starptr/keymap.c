@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "keycode.h"
 #include "mousekey.h"
 #include "quantum.h"
+#include "quantum_keycodes.h"
 #include "rgb_matrix.h"
 #include QMK_KEYBOARD_H
 #include "g/keymap_combo.h"
@@ -39,9 +40,12 @@ enum layer_names {
     BASE = 0,
     NO_TAP_HOLD,
     KEYPAD,
+    DIR,
     DEV,
     FN,
 };
+#define TG_NOHT TG(NO_TAP_HOLD)     // alias
+
 #define KC_TASK LGUI(KC_TAB)        // Task viewer
 #define KC_FLXP LGUI(KC_E)          // Windows file explorer
 
@@ -49,6 +53,20 @@ enum layer_names {
 #define KC_FIND LALT(LGUI(KC_SPC))  // Finder
 #define KC_MSCR LSFT(LGUI(KC_3))    // Mac screenshot
 #define KC_MSNP LSFT(LGUI(KC_4))    // Mac snip tool
+
+// Home-row mods
+#define H_SFTA LSFT_T(KC_A)
+#define H_CTLS LCTL_T(KC_A)
+#define H_DIRD LT(DIR, KC_D)
+#define H_ALTZ LALT_T(KC_Z)
+
+#define H_SFTSCLN RSFT_T(KC_SCLN)
+#define H_CTLL RCTL_T(KC_L)
+#define H_DIRK LT(DIR, KC_K)
+#define H_ALTSLSH RALT_T(KC_SLSH)
+
+#define ALTRIGHT LALT(KC_RIGHT)
+#define ALTLEFT  LALT(KC_LEFT)
 
 enum custom_keys {
   WINMAC = SAFE_RANGE, // swap win & mac layers
@@ -87,6 +105,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
       KC_ESC,     KC_F1,      KC_F2,      KC_F3,      KC_F4,      KC_F5,      KC_F6,      KC_F7,      KC_F8,      KC_F9,      KC_F10,     KC_F11,     KC_F12,     KC_MSNP,    KC_DEL,     RGB_MOD  ,
       KC_GRV,     KC_1,       KC_2,       KC_3,       KC_4,       KC_5,       KC_6,       KC_7,       KC_8,       KC_9,       KC_0,       KC_MINS,    KC_EQL,     KC_BSPC,                KC_PGUP  ,
       KC_TAB,     KC_Q,       KC_W,       KC_E,       KC_R,       KC_T,       KC_Y,       KC_U,       KC_I,       KC_O,       KC_P,       KC_LBRC,    KC_RBRC,    KC_BSLS,                KC_PGDN  ,
+      KC_CAPS,  H_SFTA,     H_CTLS,     H_DIRD,       KC_F,       KC_G,       KC_H,       KC_J,     H_DIRK,     H_CTLL,     H_SFTSCLN,    KC_QUOT,                KC_ENT,                 KC_HOME  ,
+      KC_LSPO,              H_ALTZ,       KC_X,       KC_C,       KC_V,       KC_B,       KC_N,       KC_M,       KC_COMM,    KC_DOT,   H_ALTSLSH,                KC_RSPC,    KC_UP,      KC_END   ,
+      KC_LCPO,   KC_LALT,    KC_LGUI,                                        KC_SPC,                                         KC_RGUI,     MO(FN),    KC_RCPC,    KC_LEFT,    KC_DOWN,    KC_RGHT
+  ),
+  [NO_TAP_HOLD] = LAYOUT_75_ansi(
+  /*  0           1           2           3           4           5           6           7           8           9           10          11          12          13          14          15       */
+      KC_ESC,     KC_F1,      KC_F2,      KC_F3,      KC_F4,      KC_F5,      KC_F6,      KC_F7,      KC_F8,      KC_F9,      KC_F10,     KC_F11,     KC_F12,     KC_MSNP,    KC_DEL,     RGB_MOD  ,
+      KC_GRV,     KC_1,       KC_2,       KC_3,       KC_4,       KC_5,       KC_6,       KC_7,       KC_8,       KC_9,       KC_0,       KC_MINS,    KC_EQL,     KC_BSPC,                KC_PGUP  ,
+      KC_TAB,     KC_Q,       KC_W,       KC_E,       KC_R,       KC_T,       KC_Y,       KC_U,       KC_I,       KC_O,       KC_P,       KC_LBRC,    KC_RBRC,    KC_BSLS,                KC_PGDN  ,
       KC_CAPS,    KC_A,       KC_S,       KC_D,       KC_F,       KC_G,       KC_H,       KC_J,       KC_K,       KC_L,       KC_SCLN,    KC_QUOT,                KC_ENT,                 KC_HOME  ,
       KC_LSPO,                KC_Z,       KC_X,       KC_C,       KC_V,       KC_B,       KC_N,       KC_M,       KC_COMM,    KC_DOT,     KC_SLSH,                KC_RSPC,    KC_UP,      KC_END   ,
       KC_LCPO,    KC_LALT,    KC_LGUI,                                        KC_SPC,                                         KC_RGUI,     MO(FN),    KC_RCPC,    KC_LEFT,    KC_DOWN,    KC_RGHT
@@ -102,6 +129,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
       _______,    _______,    _______,    _______,    _______,    _______,    _______,      KC_P1,      KC_P2,      KC_P3,    KC_PENT,    _______,                _______,                _______  ,
       _______,                _______,    _______,    _______,    _______,    _______,    _______,      KC_P0,      KC_P0,    KC_PDOT,    KC_PENT,                _______,    _______,    _______  ,
       _______,    _______,    _______,                                        _______,                                        _______,    _______,    _______,    _______,    _______,    _______
+  ),
+
+  /*
+    Helper keys for developing keyboard firmware
+  */
+  [DIR] = LAYOUT_75_ansi(
+  /*  0           1           2           3           4           5           6           7           8           9           10          11          12          13          14          15       */
+    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______  ,
+    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______  ,
+    _______,    _______,   ALTRIGHT,    _______,    _______,    _______,    KC_LEFT,    KC_DOWN,      KC_UP,   KC_RIGHT,    _______,    _______,    _______,    _______,                _______  ,
+    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______,                _______  ,
+    _______,                _______,    _______,    _______,    ALTLEFT,    _______,    _______,    _______,    _______,    _______,    _______,                _______,    _______,    _______  ,
+    _______,    _______,    _______,                                        _______,                                        _______,    _______,    _______,    _______,    _______,    _______
   ),
 
   /*
@@ -139,7 +179,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /*  0           1           2           3           4           5           6           7           8           9           10          11          12          13          14          15       */
       RESET,      KC_BRID,    KC_BRIU,    KC_MSSN,    KC_FIND,    RGB_VAD,    RGB_VAI,    KC_MPRV,    KC_MPLY,    KC_MNXT,    KC_MUTE,    KC_VOLD,    KC_VOLU,    KC_MSCR,    KC_INS,     RGB_TOG  ,
       _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______  ,
-      _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______  ,
+      _______,    _______,    _______,    _______,    _______,    _______,    TG_NOHT,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______  ,
       _______,    _______,     WINMAC,    TG(DEV),     VALAFK,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______,                _______  ,
       _______,                _______,    _______,    CMB_TOG,    _______,    _______,    _______, TG(KEYPAD),    _______,    _______,    _______,                _______,    RGB_SAI,    _______  ,
       _______,    _______,    _______,                                        _______,                                        _______,    _______,    _______,    RGB_HUD,    RGB_SAD,    RGB_HUI
@@ -226,11 +266,31 @@ uint32_t valafk_cb(uint32_t trigger_time, void *cb_arg) {
   return 300;
 }
 
+
+typedef struct {
+  bool initialized;
+  HSV hsv;
+  uint8_t mode;
+} visual_state;
+static visual_state get_visual_state(void) {
+  return (visual_state){
+    .initialized = true,
+    .hsv = rgb_matrix_get_hsv(),
+    .mode = rgb_matrix_get_mode(),
+  };
+}
+
 static bool is_valafk = false; // Init w default mode
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   static bool is_mac = true; // Initialize with default mode
   static bool is_kpad = false; // Initialize with default state (disabled)
   static bool is_kdev = false; // Initialize with default state (disabled)
+  static bool is_tap_hold_enabled = true; // Initialize with default state (enabled)
+  static visual_state recent_visual_state = { .initialized = false };
+  if (!recent_visual_state.initialized) {
+    recent_visual_state = get_visual_state();
+  }
+
   switch (keycode) {
     case WINMAC: {
       if (record->event.pressed) {
@@ -250,6 +310,24 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         is_kdev = false;
       }
       return false;
+    }
+    case TG_NOHT: {
+      if (record->event.pressed) {
+        is_tap_hold_enabled = !is_tap_hold_enabled;
+        recent_visual_state = get_visual_state();
+        if (is_tap_hold_enabled) {
+          rgb_matrix_sethsv_noeeprom(0, 255, 255);
+          rgb_matrix_mode_noeeprom(RGB_MATRIX_CYCLE_LEFT_RIGHT);
+        } else {
+          rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+          rgb_matrix_sethsv_noeeprom(142, 255, 239);
+        }
+      } else {
+        rgb_matrix_sethsv_noeeprom(recent_visual_state.hsv.h, recent_visual_state.hsv.s, recent_visual_state.hsv.v);
+        rgb_matrix_mode_noeeprom(recent_visual_state.mode);
+        rgb_matrix_sethsv_noeeprom(recent_visual_state.hsv.h, recent_visual_state.hsv.s, recent_visual_state.hsv.v);
+      }
+      return true;
     }
     case TG(KEYPAD): {
       if (record->event.pressed) {
