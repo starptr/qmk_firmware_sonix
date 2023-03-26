@@ -188,7 +188,7 @@ void set_rgb_matrix_with_state(rgb_state_t state) {
     }
     case KPAD: {
       rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-      rgb_matrix_sethsv_noeeprom(120, 255, 255);
+      rgb_matrix_sethsv_noeeprom(84, 255, 255);
       return;
     }
     case KDEV: {
