@@ -39,6 +39,7 @@ enum layer_names {
     BASE = 0,
     KEYPAD,
     FN,
+    DEV,
 };
 #define KC_TASK LGUI(KC_TAB)        // Task viewer
 #define KC_FLXP LGUI(KC_E)          // Windows file explorer
@@ -103,6 +104,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
 
   /*
+    Helper keys for developing keyboard firmware
+  */
+  [DEV] = LAYOUT_75_ansi(
+  /*  0           1           2           3           4           5           6           7           8           9           10          11          12          13          14          15       */
+    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______  ,
+    _______,    _______,    _______,    _______,    _______,      DT_UP,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______  ,
+    _______,    _______,    _______,    _______,    _______,    DT_PRNT,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______  ,
+    _______,    _______,    _______,    _______,    _______,    DT_DOWN,    _______,    _______,    _______,    _______,    _______,    _______,                _______,                _______  ,
+    _______,                _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______,    _______,    _______  ,
+    _______,    _______,    _______,                                        _______,                                        _______,    _______,    _______,    _______,    _______,    _______
+  ),
+
+  /*
     *****************************************************************************************************************
     *RESET * BRID * BRIU * TASK * FLXP * RVAD * RVAI * MPRV * MPLY * MNXT * MUTE * VOLD * VOLU *      *  INS * RTOG *
     *****************************************************************************************************************
@@ -117,12 +131,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     *       *       *       *                                             *      *      *      * RHUD * RSAD * RHUI *
     *****************************************************************************************************************
   */
+  /*
+   Function layer should always be at the top
+  */
   [FN] = LAYOUT_75_ansi(
   /*  0           1           2           3           4           5           6           7           8           9           10          11          12          13          14          15       */
       RESET,      KC_BRID,    KC_BRIU,    KC_MSSN,    KC_FIND,    RGB_VAD,    RGB_VAI,    KC_MPRV,    KC_MPLY,    KC_MNXT,    KC_MUTE,    KC_VOLD,    KC_VOLU,    KC_MSCR,    KC_INS,     RGB_TOG  ,
       _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______  ,
       _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______  ,
-      _______,    _______,     WINMAC,    _______,     VALAFK,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______,                _______  ,
+      _______,    _______,     WINMAC,    TG(DEV),     VALAFK,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______,                _______  ,
       _______,                _______,    _______,    CMB_TOG,    _______,    _______,    _______, TG(KEYPAD),    _______,    _______,    _______,                _______,    RGB_SAI,    _______  ,
       _______,    _______,    _______,                                        _______,                                        _______,    _______,    _______,    RGB_HUD,    RGB_SAD,    RGB_HUI
   )
@@ -155,6 +172,7 @@ typedef enum rgb_state {
   MAC = 0,
   WIN,
   KPAD,
+  KDEV,
 } rgb_state_t;
 void set_rgb_matrix_with_state(rgb_state_t state) {
   switch (state) {
@@ -171,6 +189,11 @@ void set_rgb_matrix_with_state(rgb_state_t state) {
     case KPAD: {
       rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
       rgb_matrix_sethsv_noeeprom(120, 255, 255);
+      return;
+    }
+    case KDEV: {
+      rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+      rgb_matrix_sethsv_noeeprom(0, 255, 255);
       return;
     }
   }
@@ -206,6 +229,7 @@ static bool is_valafk = false; // Init w default mode
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   static bool is_mac = true; // Initialize with default mode
   static bool is_kpad = false; // Initialize with default state (disabled)
+  static bool is_kdev = false; // Initialize with default state (disabled)
   switch (keycode) {
     case WINMAC: {
       if (record->event.pressed) {
@@ -221,6 +245,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
         layer_off(KEYPAD);
         is_kpad = false;
+        layer_off(DEV);
+        is_kdev = false;
       }
       return false;
     }
@@ -232,6 +258,23 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         } else {
           set_rgb_matrix_with_state(is_mac ? MAC : WIN);
         }
+
+        layer_off(DEV);
+        is_kdev = false;
+      }
+      return true;
+    }
+    case TG(DEV): {
+      if (record->event.pressed) {
+        is_kdev = !is_kdev;
+        if (is_kdev) {
+          set_rgb_matrix_with_state(KDEV);
+        } else {
+          set_rgb_matrix_with_state(is_mac ? MAC : WIN);
+        }
+
+        layer_off(KEYPAD);
+        is_kpad = false;
       }
       return true;
     }
