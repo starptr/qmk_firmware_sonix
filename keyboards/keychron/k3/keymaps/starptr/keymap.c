@@ -37,9 +37,10 @@ extern keymap_config_t keymap_config;
 // entirely and just use numbers.
 enum layer_names {
     BASE = 0,
+    NO_TAP_HOLD,
     KEYPAD,
-    FN,
     DEV,
+    FN,
 };
 #define KC_TASK LGUI(KC_TAB)        // Task viewer
 #define KC_FLXP LGUI(KC_E)          // Windows file explorer
