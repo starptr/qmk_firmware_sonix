@@ -61,6 +61,8 @@ enum layer_names {
 #define H_DIRD LT(DIR, KC_D)
 #define H_ALTZ LALT_T(KC_Z)
 #define H_ALTS LALT_T(KC_S)
+#define H_SFTF LSFT_T(KC_F)
+#define H_CTLA LCTL_T(KC_A)
 
 #define H_SFTSCLN RSFT_T(KC_SCLN)
 #define H_CTLL RCTL_T(KC_L)
@@ -68,6 +70,8 @@ enum layer_names {
 #define H_DIRK LT(DIR, KC_K)
 #define H_ALTSLSH RALT_T(KC_SLSH)
 #define H_ALTL RALT_T(KC_L)
+#define H_SFTJ RSFT_T(KC_J)
+#define H_CTLSCLN RCTL_T(KC_SCLN)
 
 #define ALTRIGHT LALT(KC_RIGHT)
 #define ALTLEFT  LALT(KC_LEFT)
