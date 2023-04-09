@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "color.h"
 #include "deferred_exec.h"
 #include "keycode.h"
-#include "mousekey.h"
 #include "quantum.h"
 #include "quantum_keycodes.h"
 #include "rgb_matrix.h"
@@ -78,7 +77,6 @@ enum layer_names {
 
 enum custom_keys {
   WINMAC = SAFE_RANGE, // swap win & mac layers
-  VALAFK,
 };
 
 /*
@@ -188,7 +186,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
       RESET,      KC_BRID,    KC_BRIU,    KC_MSSN,    KC_FIND,    RGB_VAD,    RGB_VAI,    KC_MPRV,    KC_MPLY,    KC_MNXT,    KC_MUTE,    KC_VOLD,    KC_VOLU,    KC_MSCR,    KC_INS,     RGB_TOG  ,
       _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______  ,
       _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,                _______  ,
-      _______,    _______,     WINMAC,    TG(DEV),     VALAFK,    _______,    TG_NOHT,    _______,    _______,    _______,    _______,    _______,                _______,                _______  ,
+      _______,    _______,     WINMAC,    TG(DEV),    _______,    _______,    TG_NOHT,    _______,    _______,    _______,    _______,    _______,                _______,                _______  ,
       _______,                _______,    _______,    CMB_TOG,    _______,    _______,    _______, TG(KEYPAD),    _______,    _______,    _______,                _______,    RGB_SAI,    _______  ,
       _______,    _______,    _______,                                        _______,                                        _______,    _______,    _______,    RGB_HUD,    RGB_SAD,    RGB_HUI
   )
@@ -248,33 +246,6 @@ void set_rgb_matrix_with_state(rgb_state_t state) {
   }
 }
 
-uint32_t valafk_cb(uint32_t trigger_time, void *cb_arg) {
-  int mode = rand() % 4;
-  switch (mode) {
-    case 0: {
-      tap_code_delay(KC_W, 700);
-      break;
-    }
-    case 1: {
-      tap_code_delay(KC_A, 700);
-      break;
-    }
-    case 2: {
-      tap_code_delay(KC_S, 700);
-      break;
-    }
-    case 3: {
-      tap_code_delay(KC_D, 700);
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-  return 300;
-}
-
-
 typedef struct {
   bool initialized;
   HSV hsv;
@@ -288,7 +259,6 @@ static visual_state get_visual_state(void) {
   };
 }
 
-static bool is_valafk = false; // Init w default mode
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   static bool is_mac = true; // Initialize with default mode
   static bool is_kpad = false; // Initialize with default state (disabled)
@@ -364,21 +334,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         is_kpad = false;
       }
       return true;
-    }
-    case VALAFK: {
-      if (record->event.pressed) {
-        static deferred_token valafk_cb_tkn = INVALID_DEFERRED_TOKEN;
-        is_valafk = !is_valafk; // toggle state
-        if (is_valafk) {
-          valafk_cb_tkn = defer_exec(1000, valafk_cb, NULL);
-        } else {
-          if (valafk_cb_tkn != INVALID_DEFERRED_TOKEN) {
-            cancel_deferred_exec(valafk_cb_tkn);
-            valafk_cb_tkn = INVALID_DEFERRED_TOKEN;
-          }
-        }
-      }
-      return false;
     }
     default: {
       return true;
