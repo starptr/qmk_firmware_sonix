@@ -1,7 +1,7 @@
 RGB_MATRIX_CUSTOM_USER = no
 
 VPATH  +=  keyboards/gboards/
-COMBO_ENABLE=yes
+COMBO_ENABLE=no
 
 DEFERRED_EXEC_ENABLE = yes
 MOUSEKEY_ENABLE = yes
