@@ -38,10 +38,9 @@ extern keymap_config_t keymap_config;
 // entirely and just use numbers.
 enum layer_names {
     BASE = 0,
+    BASE_WINDOWS,
     NO_TAP_HOLD,
-    KEYPAD,
     DIR,
-    DEV,
     FN,
 };
 #define TG_NOHT TG(NO_TAP_HOLD)     // alias
@@ -55,30 +54,34 @@ enum layer_names {
 #define KC_MSNP LSFT(LGUI(KC_4))    // Mac snip tool
 
 // Home-row mods
-#define H_SFTA LSFT_T(KC_A)
-#define H_CTLS LCTL_T(KC_S)
-#define H_CTLF LCTL_T(KC_F)
-#define H_DIRD LT(DIR, KC_D)
-#define H_ALTZ LALT_T(KC_Z)
-#define H_ALTS LALT_T(KC_S)
-#define H_SFTF LSFT_T(KC_F)
-#define H_CTLA LCTL_T(KC_A)
+#define H_LSFT_A LSFT_T(KC_A)
+#define H_LCTL_S LCTL_T(KC_S)
+#define H_LCTL_F LCTL_T(KC_F)
+#define H_DIR_D LT(DIR, KC_D)
+#define H_LALT_Z LALT_T(KC_Z)
+#define H_LALT_S LALT_T(KC_S)
+#define H_LSFT_F LSFT_T(KC_F)
+#define H_LCTL_A LCTL_T(KC_A)
+#define H_LGUI_F LGUI_T(KC_F)
 
-#define H_SFTSCLN RSFT_T(KC_SCLN)
-#define H_CTLL RCTL_T(KC_L)
-#define H_CTLJ RCTL_T(KC_J)
-#define H_DIRK LT(DIR, KC_K)
-#define H_ALTSLSH RALT_T(KC_SLSH)
-#define H_ALTL RALT_T(KC_L)
-#define H_SFTJ RSFT_T(KC_J)
-#define H_CTLSCLN RCTL_T(KC_SCLN)
+#define H_RSFT_SCLN RSFT_T(KC_SCLN)
+#define H_RCTL_L RCTL_T(KC_L)
+#define H_RCTL_J RCTL_T(KC_J)
+#define H_DIR_K LT(DIR, KC_K)
+#define H_RALT_SLSH RALT_T(KC_SLSH)
+#define H_RALT_L RALT_T(KC_L)
+#define H_RSFT_J RSFT_T(KC_J)
+#define H_RCTL_SCLN RCTL_T(KC_SCLN)
+#define H_RGUI_J RGUI_T(KC_J)
 
 #define ALTRIGHT LALT(KC_RIGHT)
 #define ALTLEFT  LALT(KC_LEFT)
 
 enum custom_keys {
   WINMAC = SAFE_RANGE, // swap win & mac layers
-  VALAFK,
+  // See upstream for description
+  WIN_L,
+  WIN_R,
 };
 
 /*
@@ -113,9 +116,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
       KC_ESC,     KC_F1,      KC_F2,      KC_F3,      KC_F4,      KC_F5,      KC_F6,      KC_F7,      KC_F8,      KC_F9,      KC_F10,     KC_F11,     KC_F12,     KC_MSNP,    KC_DEL,     RGB_MOD  ,
       KC_GRV,     KC_1,       KC_2,       KC_3,       KC_4,       KC_5,       KC_6,       KC_7,       KC_8,       KC_9,       KC_0,       KC_MINS,    KC_EQL,     KC_BSPC,                KC_PGUP  ,
       KC_TAB,     KC_Q,       KC_W,       KC_E,       KC_R,       KC_T,       KC_Y,       KC_U,       KC_I,       KC_O,       KC_P,       KC_LBRC,    KC_RBRC,    KC_BSLS,                KC_PGDN  ,
-      KC_CAPS,  H_SFTA,     H_ALTS,     H_DIRD,     H_CTLF,       KC_G,       KC_H,     H_CTLJ,     H_DIRK,     H_ALTL,     H_SFTSCLN,    KC_QUOT,                KC_ENT,                 KC_HOME  ,
-      KC_LPRN,                KC_Z,       KC_X,       KC_C,       KC_V,       KC_B,       KC_N,       KC_M,       KC_COMM,    KC_DOT,     KC_SLSH,                KC_RPRN,    KC_UP,      KC_END   ,
-      KC_LBRC,   KC_LALT,    KC_LGUI,                                        KC_SPC,                                         KC_RGUI,     MO(FN),    KC_RBRC,    KC_LEFT,    KC_DOWN,    KC_RGHT
+      KC_CAPS,    H_SFTA,     H_ALTS,     H_DIRD,     H_CTLF,       KC_G,       KC_H,     H_CTLJ,     H_DIRK,     H_ALTL,     H_SFTSCLN,    KC_QUOT,                KC_ENT,                 KC_HOME  ,
+      _______,                KC_Z,       KC_X,       KC_C,       KC_V,       KC_B,       KC_N,       KC_M,       KC_COMM,    KC_DOT,     KC_SLSH,                KC_RPRN,    KC_UP,      KC_END   ,
+      KC_LBRC,    KC_LALT,    KC_LGUI,                                        KC_SPC,                                         KC_RGUI,     MO(FN),    KC_RBRC,    KC_LEFT,    KC_DOWN,    KC_RGHT
   ),
   [NO_TAP_HOLD] = LAYOUT_75_ansi(
   /*  0           1           2           3           4           5           6           7           8           9           10          11          12          13          14          15       */
@@ -248,33 +251,6 @@ void set_rgb_matrix_with_state(rgb_state_t state) {
   }
 }
 
-uint32_t valafk_cb(uint32_t trigger_time, void *cb_arg) {
-  int mode = rand() % 4;
-  switch (mode) {
-    case 0: {
-      tap_code_delay(KC_W, 700);
-      break;
-    }
-    case 1: {
-      tap_code_delay(KC_A, 700);
-      break;
-    }
-    case 2: {
-      tap_code_delay(KC_S, 700);
-      break;
-    }
-    case 3: {
-      tap_code_delay(KC_D, 700);
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-  return 300;
-}
-
-
 typedef struct {
   bool initialized;
   HSV hsv;
@@ -385,18 +361,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
   }
 }
-
-// NOTE: it visually looks unstable for some reason
-//void rgb_matrix_indicators_user() {
-//  if (is_mac) {
-//    rgb_matrix_mode_noeeprom(RGB_MATRIX_CYCLE_LEFT_RIGHT);
-//    //rgb_matrix_enable_noeeprom();
-//  } else {
-//    //rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-//    rgb_matrix_set_color_all(0, 164, 239); // Microsoft Blue
-//    //rgb_matrix_disable_noeeprom();
-//  }
-//}
 
 void keyboard_post_init_user(void) {
   // Customise these values to desired behaviour
