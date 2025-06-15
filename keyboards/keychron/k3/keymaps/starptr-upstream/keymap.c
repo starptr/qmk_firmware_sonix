@@ -201,146 +201,174 @@ bool dip_switch_update_user(uint8_t index, bool active) {
   return true;
 }
 
-typedef enum rgb_state {
-  MAC = 0,
-  WIN,
-  KPAD,
-  KDEV,
-} rgb_state_t;
-void set_rgb_matrix_with_state(rgb_state_t state) {
-  switch (state) {
-    case MAC: {
-      rgb_matrix_sethsv_noeeprom(0, 255, 255);
-      rgb_matrix_mode_noeeprom(RGB_MATRIX_CYCLE_LEFT_RIGHT);
-      return;
+typedef enum {
+    STYLE_MACOS,
+    STYLE_WINDOWS,
+} OSStyle;
+void osstyle_toggle(OSStyle* state) {
+    if (*state == STYLE_MACOS) {
+        layer_on(BASE_WINDOWS);
+        *state = STYLE_WINDOWS;
+        rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+        rgb_matrix_sethsv_noeeprom(142, 255, 239);
+    } else {
+        layer_off(BASE_WINDOWS);
+        *state = STYLE_MACOS;
+        rgb_matrix_sethsv_noeeprom(0, 255, 255);
+        rgb_matrix_mode_noeeprom(RGB_MATRIX_CYCLE_ALL);
     }
-    case WIN: {
-      rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-      rgb_matrix_sethsv_noeeprom(142, 255, 239);
-      return;
-    }
-    case KPAD: {
-      rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-      rgb_matrix_sethsv_noeeprom(84, 255, 255);
-      return;
-    }
-    case KDEV: {
-      rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-      rgb_matrix_sethsv_noeeprom(0, 255, 255);
-      return;
-    }
-  }
 }
 
-typedef struct {
-  bool initialized;
-  HSV hsv;
-  uint8_t mode;
-} visual_state;
-static visual_state get_visual_state(void) {
-  return (visual_state){
-    .initialized = true,
-    .hsv = rgb_matrix_get_hsv(),
-    .mode = rgb_matrix_get_mode(),
-  };
+uint16_t gui_kc(bool is_left) {
+    if (is_left) {
+        return KC_LGUI;
+    }
+    return KC_RGUI;
 }
 
-static bool is_valafk = false; // Init w default mode
+uint16_t alt_kc(bool is_left) {
+    if (is_left) {
+        return KC_LALT;
+    }
+    return KC_RALT;
+}
+
+uint16_t ctl_kc(bool is_left) {
+    if (is_left) {
+        return KC_LCTL;
+    }
+    return KC_RCTL;
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  static bool is_mac = true; // Initialize with default mode
-  static bool is_kpad = false; // Initialize with default state (disabled)
-  static bool is_kdev = false; // Initialize with default state (disabled)
-  static bool is_tap_hold_enabled = true; // Initialize with default state (enabled)
-  static visual_state recent_visual_state = { .initialized = false };
-  if (!recent_visual_state.initialized) {
-    recent_visual_state = get_visual_state();
-  }
+    static OSStyle current_style = STYLE_MACOS;
+    static int win_gui_held_count = 0;
+    static uint16_t win_gui_held_type = WIN_L; // When one of the gui keys are unpressed, we know it must be the other one that's held
+    static uint16_t win_gui_resolved_sticky = KC_LGUI; // After the gui key is pressed with another key, we know what the gui key should really be
+    static uint16_t* win_gui_maybe_resolved = NULL;
+    static uint16_t win_gui_held_timer = 0;
 
-  switch (keycode) {
+    switch (keycode) {
     case WINMAC: {
-      if (record->event.pressed) {
-        is_mac = !is_mac; // toggle state
-        if (is_mac) {
-          set_rgb_matrix_with_state(MAC);
-        } else {
-          set_rgb_matrix_with_state(WIN);
+        // Reset the withheld state on enter/exit of windows style
+        if (win_gui_maybe_resolved != NULL) {
+            unregister_code(*win_gui_maybe_resolved);
+            win_gui_maybe_resolved = NULL;
         }
 
-        keymap_config.swap_lalt_lgui = !keymap_config.swap_lalt_lgui;
-        keymap_config.swap_ralt_rgui = !keymap_config.swap_ralt_rgui;
-
-        layer_off(KEYPAD);
-        is_kpad = false;
-        layer_off(DEV);
-        is_kdev = false;
-      }
-      return false;
-    }
-    case TG_NOHT: {
-      if (record->event.pressed) {
-        is_tap_hold_enabled = !is_tap_hold_enabled;
-        recent_visual_state = get_visual_state();
-        if (is_tap_hold_enabled) {
-          rgb_matrix_sethsv_noeeprom(0, 255, 255);
-          rgb_matrix_mode_noeeprom(RGB_MATRIX_CYCLE_LEFT_RIGHT);
-        } else {
-          rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-          rgb_matrix_sethsv_noeeprom(142, 255, 239);
-        }
-      } else {
-        rgb_matrix_sethsv_noeeprom(recent_visual_state.hsv.h, recent_visual_state.hsv.s, recent_visual_state.hsv.v);
-        rgb_matrix_mode_noeeprom(recent_visual_state.mode);
-        rgb_matrix_sethsv_noeeprom(recent_visual_state.hsv.h, recent_visual_state.hsv.s, recent_visual_state.hsv.v);
-      }
-      return true;
-    }
-    case TG(KEYPAD): {
-      if (record->event.pressed) {
-        is_kpad = !is_kpad;
-        if (is_kpad) {
-          set_rgb_matrix_with_state(KPAD);
-        } else {
-          set_rgb_matrix_with_state(is_mac ? MAC : WIN);
+        if (record->event.pressed) {
+            // Set state
+            osstyle_toggle(&current_style);
         }
 
-        layer_off(DEV);
-        is_kdev = false;
-      }
-      return true;
+        // Don't process this key further
+        return false;
     }
-    case TG(DEV): {
-      if (record->event.pressed) {
-        is_kdev = !is_kdev;
-        if (is_kdev) {
-          set_rgb_matrix_with_state(KDEV);
-        } else {
-          set_rgb_matrix_with_state(is_mac ? MAC : WIN);
+    case WIN_L:
+    case WIN_R: {
+        // Check if key was pressed down
+        if (record->event.pressed) {
+            // The key that was just pressed down counts as the key that's held
+            if (keycode == WIN_L) {
+                win_gui_held_type = WIN_L;
+            } else {
+                win_gui_held_type = WIN_R;
+            }
+
+            win_gui_held_count++;
+
+            if (win_gui_held_count >= 2) {
+                // The gui key was pressed down again (probably by pressing both of them)
+                return false;
+            }
+            // The gui key was pressed down for the first time (i.e. the other gui key was not pressed down already)
+            win_gui_held_timer = timer_read();
+            return false;
         }
 
-        layer_off(KEYPAD);
-        is_kpad = false;
-      }
-      return true;
-    }
-    case VALAFK: {
-      if (record->event.pressed) {
-        static deferred_token valafk_cb_tkn = INVALID_DEFERRED_TOKEN;
-        is_valafk = !is_valafk; // toggle state
-        if (is_valafk) {
-          valafk_cb_tkn = defer_exec(1000, valafk_cb, NULL);
-        } else {
-          if (valafk_cb_tkn != INVALID_DEFERRED_TOKEN) {
-            cancel_deferred_exec(valafk_cb_tkn);
-            valafk_cb_tkn = INVALID_DEFERRED_TOKEN;
-          }
+        // Key was unpressed
+        win_gui_held_count--;
+
+        // Check if the unpressed key was the last gui key that was held
+        if (win_gui_held_count == 0) {
+            // If win_gui is already held in the OS, we need to release it (eg. the alt is still held after alt-tab)
+            if (win_gui_maybe_resolved != NULL) {
+                unregister_code(*win_gui_maybe_resolved);
+                win_gui_maybe_resolved = NULL;
+            }
+
+            if (timer_elapsed(win_gui_held_timer) < TAPPING_TERM) {
+                // The unpress was so soon after the press that it counts as a tap
+                tap_code(gui_kc(win_gui_held_type == WIN_L));
+                return false;
+            }
+            return false;
         }
-      }
-      return false;
+
+        // There are still other gui keys that are held
+        // The key that wasn't just unpressed is the type of key that's still held
+        if (keycode == WIN_L) {
+            win_gui_held_type = WIN_R;
+        } else {
+            win_gui_held_type = WIN_L;
+        }
+
+        return false;
+    }
+    case KC_TAB:
+    case KC_SPC: {
+        if (win_gui_held_count == 0) {
+            // Not a special case we have to handle; just proceed as normal
+            return true;
+        }
+
+        if (record->event.pressed) {
+            // Check if win_gui is already held in the OS (eg. the ctrl is held after ctrl-c)
+            if (win_gui_maybe_resolved != NULL) {
+                // If the already-held-in-the-OS state is ALT, we don't need to do anything in process_record_user; just continue processing the key
+                if (*win_gui_maybe_resolved == KC_LALT || *win_gui_maybe_resolved == KC_RALT) {
+                    return true;
+                }
+                unregister_code(*win_gui_maybe_resolved);
+                win_gui_maybe_resolved = NULL;
+            }
+
+            uint16_t kc_alt = alt_kc(win_gui_held_type == WIN_L);
+            win_gui_resolved_sticky = kc_alt;
+            win_gui_maybe_resolved = &win_gui_resolved_sticky;
+            register_code(*win_gui_maybe_resolved);
+            return true; // Continue processing the key
+        }
+
+        return true; // Continue processing the key
     }
     default: {
-      return true;
+        if (win_gui_held_count == 0) {
+            // Not a special case we have to handle; just proceed as normal
+            return true;
+        }
+
+        if (record->event.pressed) {
+            // Check if win_gui is already held in the OS (eg. the alt is held after alt-tab)
+            if (win_gui_maybe_resolved != NULL) {
+                // If the already-held-in-the-OS state is CTL, we don't need to do anything in process_record_user; just continue processing the key
+                if (*win_gui_maybe_resolved == KC_LCTL || *win_gui_maybe_resolved == KC_RCTL) {
+                    return true;
+                }
+                unregister_code(*win_gui_maybe_resolved);
+                win_gui_maybe_resolved = NULL;
+            }
+
+            uint16_t kc_ctl = ctl_kc(win_gui_held_type == WIN_L);
+            win_gui_resolved_sticky = kc_ctl;
+            win_gui_maybe_resolved = &win_gui_resolved_sticky;
+            register_code(*win_gui_maybe_resolved);
+            return true; // Continue processing the key
+        }
+
+        return true;
     }
-  }
+    }
 }
 
 void keyboard_post_init_user(void) {
